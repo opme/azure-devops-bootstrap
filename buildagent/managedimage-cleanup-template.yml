@@ -1,0 +1,46 @@
+parameters:
+- name: variable_group
+  displayName: Variable Group
+  type: string
+  default: BuildAgents
+- name: agent_pool
+  displayName: Agent Pool
+  type: string
+  default: CI Windows2019
+- name: delete_type
+  displayName: 'Delete vmss (VM Scale Set) or galleryvm (Gallery VM) image?'
+  type: string
+  default: galleryvm
+  values:
+  - galleryvm
+  - vmss
+- name: gallery_threshold
+  displayName: Number of image versions to keep in gallery
+  type: number
+  default: 3
+- name: repository_base_path
+  displayName: Scripts Path
+  type: string
+  default: .
+
+stages:
+- stage: delete_gallery_imagevm
+  displayName:  'Delete Gallery Image Version VM'
+  condition: eq('${{ parameters.delete_type }}', 'galleryvm')
+  jobs:
+  - template: managedimage-cleanup-galleryvm.yml
+    parameters: 
+      variable_group: ${{ parameters.variable_group }}
+      agent_pool: ${{ parameters.agent_pool }}
+      repository_base_path: ${{ parameters.repository_base_path }}
+      gallery_threshold: ${{ parameters.gallery_threshold }}
+
+- stage: delete_vmss_imagevm
+  displayName:  'Delete orphaned Managed Images'
+  condition: eq('${{ parameters.delete_type }}', 'vmss')
+  jobs:
+  - template: managedimage-cleanup-managedvm.yml
+    parameters: 
+      variable_group: ${{ parameters.variable_group }}
+      agent_pool: ${{ parameters.agent_pool }}
+      repository_base_path: ${{ parameters.repository_base_path }}
